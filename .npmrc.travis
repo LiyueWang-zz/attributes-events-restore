@@ -1,0 +1,6 @@
+@d2l:registry=https://d2lartifacts.artifactoryonline.com/d2lartifacts/api/npm/npm-local/
+//d2lartifacts.artifactoryonline.com/d2lartifacts/api/npm/npm-local/:_password=${NPMRC_PASS}
+//d2lartifacts.artifactoryonline.com/d2lartifacts/api/npm/npm-local/:username=${NPMRC_USER}
+//d2lartifacts.artifactoryonline.com/d2lartifacts/api/npm/npm-local/:email=${NPMRC_EMAIL}
+
+//d2lartifacts.artifactoryonline.com/d2lartifacts/api/npm/npm-local/:always-auth=true
