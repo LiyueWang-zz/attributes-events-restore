@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "bluebird": "3.5.0",
+    "bunyan": "1.8.10",
+    "seedrandom": "2.4.3",
+    "uuid": "3.1.0"
+  }
+}

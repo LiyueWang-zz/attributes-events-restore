@@ -1,0 +1,126 @@
+service: attributes-events-restore
+
+custom:
+  defaults:
+    region: us-east-1
+    profile: default
+    logLevel: info
+
+provider:
+  name: aws
+  runtime: nodejs6.10
+  stage: ${opt:stage}
+  region: ${opt:region, self:custom.defaults.region}
+  profile: ${opt:profile, self:custom.defaults.profile}
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+      - "dynamodb:BatchGetItem"
+      - "dynamodb:BatchWriteItem"
+      - "dynamodb:DeleteItem"
+      - "dynamodb:DescribeTable"
+      - "dynamodb:GetItem"
+      - "dynamodb:PutItem"
+      - "dynamodb:Query"
+      - "dynamodb:Scan"
+      - "dynamodb:UpdateItem"
+    Resource: "arn:aws:dynamodb:*"
+    - Effect: "Allow"
+      Action:
+        - "sqs:SendMessage"
+        - "sqs:ReceiveMessage"
+        - "sqs:DeleteMessage"
+        - "sqs:DeleteMessageBatch"
+      Resource: "arn:aws:sqs:*"
+  environment:
+    LOG_LEVEL: ${opt:log-level, self:custom.defaults.logLevel}
+
+plugins:
+  - serverless-plugin-info-json
+
+functions:
+  worker:
+    handler: lambda.handler
+    timeout: 300
+    memory: 1536
+
+resources:
+  Resources:
+    EventsRestoreDLQ:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: ${self:service}-${self:provider.stage}-EventsRestoreDLQ
+
+    EventsRestoreQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-${self:provider.stage}-EventsRestoreQueue
+        VisibilityTimeout: 60  #TODO
+        RedrivePolicy: 
+          deadLetterTargetArn: 
+            Fn::GetAtt: 
+              - "EventsRestoreDLQ"
+              - "Arn"
+          maxReceiveCount: 10
+
+    EventsRestoreDLQPolicy:
+      Type: AWS::SQS::QueuePolicy
+      Properties:
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal: "*"
+              Action: sqs:SendMessage
+              Resource:
+                Fn::GetAtt: 
+                  - "EventsRestoreDLQ"
+                  - "Arn"
+        Queues:
+          - {Ref: EventsRestoreQueue}
+
+    EventsRestoreQueuePolicy:
+      Type: AWS::SQS::QueuePolicy
+      Properties:
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal: "*"
+              Action: sqs:SendMessage
+              Resource:
+                Fn::GetAtt: 
+                  - "EventsRestoreQueue"
+                  - "Arn"
+        Queues:
+          - {Ref: EventsRestoreQueue} #TODO
+
+  Outputs:
+    AccountId:
+      Value: {Ref: "AWS::AccountId"}
+    EventsRestoreQueueName:
+      Value:
+        Fn::GetAtt: 
+          - "EventsRestoreQueue"
+          - "QueueName"
+    EventsRestoreQueueUrl:
+      Value:
+        - {Ref: EventsRestoreQueue}
+    EventsRestoreQueueArn:
+      Value:
+        Fn::GetAtt: 
+          - "EventsRestoreQueue"
+          - "Arn"
+    EventsRestoreDLQName:
+      Value:
+        Fn::GetAtt: 
+          - "EventsRestoreDLQ"
+          - "QueueName"
+    EventsRestoreDLQUrl:
+      Value:
+        - {Ref: EventsRestoreDLQ}
+    EventsRestoreDLQArn:
+      Value:
+        Fn::GetAtt: 
+          - "EventsRestoreDLQ"
+          - "Arn"
