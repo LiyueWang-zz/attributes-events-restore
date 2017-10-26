@@ -12,6 +12,8 @@ const sumEntries = [
 	['failedEvents', 'Total failed SQS receives']
 ];
 
+const MAX_INVOCATION_NUM = 50; // set the max invocation number to invoke lambda for one cli command
+
 class Master {
 	constructor({functionName, region, sqsUrl, messagesPerSecond, terminationTimeInSec, dlqUrl, attributeTable, definitionTable, totalEventsToProcess}) {
 		this._functionName = functionName;
@@ -72,7 +74,8 @@ class Master {
 				const processedEvents = this._processLambdaResult(data, invocationNum, invokeRequest.response.requestId);
 				eventsToProcess = eventsToProcess - processedEvents;
 				log(`invocation #${invocationNum} - ${eventsToProcess} events left)`);
-				if (eventsToProcess > 0) {
+
+				if (eventsToProcess > 0 && invocationNum <= MAX_INVOCATION_NUM) {
 					return recursePages(invocationNum + 1);
 				}
 				return Promise.resolve();
