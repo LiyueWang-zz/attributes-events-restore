@@ -29,8 +29,6 @@ class Master {
 	}
 
 	_processLambdaResult(data, invocationNum, requestId) {
-		console.log("_processLambdaResult data: "+JSON.stringify(data,null,4));
-		console.log("_processLambdaResult invocationNum: "+JSON.stringify(invocationNum,null,4));
 		const logTail = Buffer.from(data.LogResult, 'base64').toString();
 		const reportRegex = /REPORT RequestId: ([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\s+Duration: ([0-9.]+) ms\s+Billed Duration: ([0-9]+) ms\s+Memory Size: (\d+) MB\s+Max Memory Used: (\d+) MB\s+$/;
 		const parsedLog = reportRegex.exec(logTail);
@@ -55,8 +53,6 @@ class Master {
 	}
 
 	_processEvent() {
-		console.log("this._sqsUrl: "+this._sqsUrl);
-		console.log("this._dlqUrl: "+this._dlqUrl);
 		const recursePages = (continuationToken, invocationNum) => {
 			log('starting invocation #' + invocationNum);
 			const invokeRequest = lambda.invoke({

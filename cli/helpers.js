@@ -2,8 +2,6 @@
 
 'use strict';
 
-const _ = require('lodash');
-
 /*
  * Print message and exit with error code 1
  */

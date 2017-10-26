@@ -30,7 +30,7 @@ module.exports.handler = lambdaHandler((event, context) => {
 		attributeTable: event.attributeTable,
 		definitionTable: event.definitionTable,
 		dlqUrl: event.dlqUrl
-	}
+	};
 
 	const cleanup = function() {
 		context.log.debug('waiting for all the tasks to be finished');
@@ -86,10 +86,10 @@ module.exports.handler = lambdaHandler((event, context) => {
 	.finally(() => cleanup())
 	.then(() => {
 		context.log.info({
-				totalMessagesProcessed,
-				totalMessagesSucceeded,
-				totalMessagesFailed
-			}, 'Succesfully processed messages on the queue');
+			totalMessagesProcessed,
+			totalMessagesSucceeded,
+			totalMessagesFailed
+		}, 'Succesfully processed messages on the queue');
 		return {
 			processedEvents: totalMessagesProcessed,
 			successfullyRestoredEvents: totalMessagesSucceeded,

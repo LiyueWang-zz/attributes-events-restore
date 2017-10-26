@@ -19,9 +19,6 @@
     "url": "https://github.com/LiyueWang/attributes-events-restore/issues"
   },
   "homepage": "https://github.com/LiyueWang/attributes-events-restore#readme",
-  "pre-commit": [
-    "lint"
-  ],
   "dependencies": {
     "aws-sdk": "2.82.0",
     "bluebird": "3.5.0",
