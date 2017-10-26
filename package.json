@@ -4,6 +4,7 @@
   "description": "\"Restore events from sqs to dynamodb tables.\"",
   "main": "cli/index.js",
   "scripts": {
+    "remove": "cd worker && sls remove",
     "restore": "node cli/index.js",
     "test": "cross-env DISABLE_MASTER_LOG=true LOG_LEVEL=warn mocha test/unit",
     "integration-test": "cross-env DISABLE_MASTER_LOG=true mocha test/post-deployment",

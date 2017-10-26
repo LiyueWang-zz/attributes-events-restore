@@ -13,7 +13,7 @@ const sumEntries = [
 ];
 
 class Master {
-	constructor({functionName, region, sqsUrl, messagesPerSecond, terminationTimeInSec, dlqUrl, attributeTable, definitionTable, concurrency}) {
+	constructor({functionName, region, sqsUrl, messagesPerSecond, terminationTimeInSec, dlqUrl, attributeTable, definitionTable, totalEventsToProcess}) {
 		this._functionName = functionName;
 		this._region = region;
 		this._sqsUrl = sqsUrl;
@@ -22,7 +22,7 @@ class Master {
 		this._dlqUrl = dlqUrl;
 		this._attributeTable = attributeTable;
 		this._definitionTable = definitionTable;
-		this._concurrency = concurrency;
+		this._totalEventsToProcess = totalEventsToProcess;
 
 		this._sums = new Map(sumEntries.map(([entry]) => [entry, 0]));
 		this._totalBilledLambdaTime = 0;
@@ -49,16 +49,15 @@ class Master {
 			this._sums.set(entry, this._sums.get(entry) + payload.body[entry]);
 		}
 		log(`invocation #${invocationNum} returned - processed events: ${payload.body.processedEvents}, restored events: ${payload.body.successfullyProcessedEvents}, SQS failures: ${payload.body.failedEvents}, time: ${executionTime.toFixed(2)} s, max memory: ${maxMemory} MB`);
-		return payload.body.continuationToken;
+		return payload.body.processedEvents;
 	}
 
-	_processEvent() {
-		const recursePages = (continuationToken, invocationNum) => {
+	_processEvent(eventsToProcess) {
+		const recursePages = (invocationNum) => {
 			log('starting invocation #' + invocationNum);
 			const invokeRequest = lambda.invoke({
 				FunctionName: this._functionName,
 				Payload: JSON.stringify({
-					// continuationToken,
 					region: this._region,
 					sqsUrl: this._sqsUrl,
 					messagesPerSecond: this._messagesPerSecond,
@@ -70,29 +69,24 @@ class Master {
 				LogType: 'Tail',
 			});
 			return invokeRequest.promise().then((data) => {
-				const nextContinuationToken = this._processLambdaResult(data, invocationNum, invokeRequest.response.requestId);
-				if (nextContinuationToken) {
-					return recursePages(nextContinuationToken, invocationNum + 1);
+				const processedEvents = this._processLambdaResult(data, invocationNum, invokeRequest.response.requestId);
+				eventsToProcess = eventsToProcess - processedEvents;
+				log(`invocation #${invocationNum} - ${eventsToProcess} events left)`);
+				if (eventsToProcess > 0) {
+					return recursePages(invocationNum + 1);
 				}
 				return Promise.resolve();
 			});
 		};
-		return recursePages(undefined, 1);
+		return recursePages(1);
 	}
 
 	run() {
-		log('Restore master started');
+		log('Restore events started');
 		this._executionStartTime = new Date();
 
-		const workers = new Array(this._concurrency).fill('worker');
-		let counter = 0;
-		return Promise.map(workers, (worker) => {
-			return this._processEvent(worker).then(() => {
-				counter++;
-				log(`done processing worker (${workers.length - counter} left)`, counter);
-			});
-		}, {concurrency: this._concurrency})
-			.then(() => log('Restore master completed'));
+		return this._processEvent(this._totalEventsToProcess)
+			.then(() => log('Restore events completed'));
 	}
 
 	getStats() {

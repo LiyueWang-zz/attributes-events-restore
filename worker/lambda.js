@@ -94,8 +94,7 @@ module.exports.handler = lambdaHandler((event, context) => {
 		return {
 			processedEvents: totalMessagesProcessed,
 			successfullyProcessedEvents: totalMessagesSucceeded,
-			failedEvents: totalMessagesFailed,
-			continuationToken: null
+			failedEvents: totalMessagesFailed
 		};
 	});
 

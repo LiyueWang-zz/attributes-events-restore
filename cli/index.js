@@ -13,7 +13,7 @@ let argv = yargs
 	.option('dlq', {alias: 'l', describe: 'SQS dead letter queue URL'})
 	.option('dynamodb-attribute', {alias: 'a', describe: 'Destination dynamodb attribute value table name'})
 	.option('dynamodb-definition', {alias: 'd', describe: 'Destination dynamodb attribute definition table name'})
-	.option('concurrency', {alias: 'c', default: 1, describe: 'Number of parallel Lambda invocations'})
+	.option('totalEventsToProcess', {alias: 'n', default: 1, describe: 'Total number of events to process'})
 	.option('plan', {alias: 'p', describe: 'Collect and print a summary and then exit', type: 'boolean'})
 	.option('yes', {alias: 'y', describe: 'Ignore confirmation prompt', type: 'boolean'})
 	.help().alias('h', 'help')
@@ -58,7 +58,7 @@ function summary() {
 	console.log(`dlq:                            ${argv.dlq}`);
 	console.log(`dynamodb-attribute:             ${argv['dynamodb-attribute']}`);
 	console.log(`dynamodb-definition:            ${argv['dynamodb-definition']}`);
-	console.log(`Concurrent Lambda invocations:  ${argv.concurrency}`);
+	console.log(`Total events to process:        ${argv.totalEventsToProcess}`);
 	console.log(`AWS profile:                    ${profile}`);
 	console.log(`Region:                         ${region}`);
 	console.log(`Worker function name:           ${functionName}`);
@@ -83,7 +83,7 @@ const master = new Master({
 	dlqUrl: argv.dlq,
 	attributeTable: argv['dynamodb-attribute'],
 	definitionTable: argv['dynamodb-definition'],
-	concurrency: argv.concurrency,
+	totalEventsToProcess: argv.totalEventsToProcess,
 });
 
 function printStats() {
