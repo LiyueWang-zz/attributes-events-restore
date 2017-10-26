@@ -16,7 +16,7 @@ module.exports.handler = lambdaHandler((event, context) => {
 	assert(event.messagesPerSecond, 'missing event.messagesPerSecond');
 	assert(event.terminationTimeInSec, 'missing event.terminationTimeInSec');
 
-	context.log.info({ queue: event.sqsUrl, attributeTable: event.attributeTable, definitionTable: event.definitionTable }, 'starting restore message from queue to dynamodb tables.');
+	context.log.info({ event: event }, 'starting restore message from queue to dynamodb tables.');
 
 	const startedWorkerTasks = [];
 	let totalMessagesProcessed = 0;
@@ -43,7 +43,8 @@ module.exports.handler = lambdaHandler((event, context) => {
 		processor = new SQSProcessor({
 			queueUrl: event.sqsUrl,
 			region: event.region,
-			messagesPerSecond: event.messagesPerSecond
+			messagesPerSecond: event.messagesPerSecond,
+			haltOnError: false
 		}).on('error', err => {
 			// TODO: Right now that's the only way to identify this error
 			if (err.message === 'Failed to receive messages') {
@@ -92,7 +93,7 @@ module.exports.handler = lambdaHandler((event, context) => {
 		}, 'Succesfully processed messages on the queue');
 		return {
 			processedEvents: totalMessagesProcessed,
-			successfullyRestoredEvents: totalMessagesSucceeded,
+			successfullyProcessedEvents: totalMessagesSucceeded,
 			failedEvents: totalMessagesFailed,
 			continuationToken: null
 		};

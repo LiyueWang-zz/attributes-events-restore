@@ -37,7 +37,12 @@ function restoreCreatedEvent(context, valueModel, eventValue, eventCreatedAt) {
                 eventValue,
                 updates
             );
-        });
+        })
+		.then(() => {
+			return {
+				success: true
+			};
+		});
 }
 
 function restoreUpdatedEvent(context, valueModel, eventValue, eventUpdatedAt, eventCreatedAt) {
@@ -69,7 +74,12 @@ function restoreUpdatedEvent(context, valueModel, eventValue, eventUpdatedAt, ev
                 eventValue,
                 updates
             );
-        });
+        })
+		.then(() => {
+			return {
+				success: true
+			};
+		});
 }
 
 function restoreDeletedEvent(context, valueModel, eventValue, eventUpdatedAt, eventCreatedAt) {
@@ -102,34 +112,39 @@ function restoreDeletedEvent(context, valueModel, eventValue, eventUpdatedAt, ev
                 eventValue,
                 updates
             );
-        });
+        })
+		.then(() => {
+			return {
+				success: true
+			};
+		});
 }
 
 function restoreEvent(context, event, valueTableName) {
     const valueModel = new ValueModel(valueTableName);
 
     //skip schema validation, assume all sent events in BEF validated
-    const eventValue = {
-        valueKey: event.EventBody.object.Id,
-        tenantId: event.TenantId,
-        objectId: event.EventBody.object.objectId,
-        objectType: event.EventBody.object.objectType,
-        values: event.EventBody.object.values,
-        lastUpdatedBy: event.EventBody.object.lastUpdatedBy,
-        _v: event.EventBody.object.RevisionNumber,
-    };
+    // const eventValue = {
+    //     valueKey: event.EventBody.object.Id,
+    //     tenantId: event.TenantId,
+    //     objectId: event.EventBody.object.objectId,
+    //     objectType: event.EventBody.object.objectType,
+    //     values: event.EventBody.object.values,
+    //     lastUpdatedBy: event.EventBody.object.lastUpdatedBy,
+    //     _v: event.EventBody.object.RevisionNumber,
+    // };
 
-    context.log.info({ eventValue }, 'starting restoreEvent...');
+    // context.log.info({ eventValue }, 'starting restoreEvent...');
 
     switch (event.EventBody.Action) {
         case 'Created':
-                return true;
+                return {success:true};
                 // return restoreCreatedEvent(context, valueModel, eventValue, event.EventBody.object.createdAt);
         case 'Updated':
-                return true;
+                return {success:true};
                 // return restoreUpdatedEvent(context, valueModel, eventValue, event.EventBody.object.updatedAt, event.EventBody.object.createdAt);
         case 'Deleted':
-                return true;
+                return {success:true};
                 // return restoreDeletedEvent(context, valueModel, eventValue, event.EventBody.object.updatedAt, event.EventBody.object.createdAt);
         default:
             throw new Error('Unknown event action: ' + event.EventBody.Action);

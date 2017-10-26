@@ -56,14 +56,14 @@ resources:
       Properties:
         QueueName: ${self:service}-${self:provider.stage}-EventsRestoreQueue
         VisibilityTimeout: 60
-        RedrivePolicy: 
-          deadLetterTargetArn: 
-            Fn::GetAtt: 
+        RedrivePolicy:
+          deadLetterTargetArn:
+            Fn::GetAtt:
               - "EventsRestoreDLQ"
               - "Arn"
           maxReceiveCount: 5
 
-    EventsRestoreDLQPolicy:
+    EventsRestoreQueuePolicy:
       Type: AWS::SQS::QueuePolicy
       Properties:
         PolicyDocument:
@@ -71,10 +71,10 @@ resources:
           Statement:
             - Effect: Allow
               Principal: "*"
-              Action: sqs:*
+              Action: sqs:SendMessage
               Resource:
-                Fn::GetAtt: 
-                  - "EventsRestoreDLQ"
+                Fn::GetAtt:
+                  - "EventsRestoreQueue"
                   - "Arn"
         Queues:
           - {Ref: EventsRestoreQueue}
@@ -84,25 +84,25 @@ resources:
       Value: {Ref: "AWS::AccountId"}
     EventsRestoreQueueName:
       Value:
-        Fn::GetAtt: 
+        Fn::GetAtt:
           - "EventsRestoreQueue"
           - "QueueName"
     EventsRestoreQueueUrl:
       Value: {Ref: EventsRestoreQueue}
     EventsRestoreQueueArn:
       Value:
-        Fn::GetAtt: 
+        Fn::GetAtt:
           - "EventsRestoreQueue"
           - "Arn"
     EventsRestoreDLQName:
       Value:
-        Fn::GetAtt: 
+        Fn::GetAtt:
           - "EventsRestoreDLQ"
           - "QueueName"
     EventsRestoreDLQUrl:
       Value: {Ref: EventsRestoreDLQ}
     EventsRestoreDLQArn:
       Value:
-        Fn::GetAtt: 
+        Fn::GetAtt:
           - "EventsRestoreDLQ"
           - "Arn"

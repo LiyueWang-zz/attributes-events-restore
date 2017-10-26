@@ -8,8 +8,8 @@ const {log} = require('./helpers');
 const lambda = new AWS.Lambda();
 const sumEntries = [
 	['processedEvents', 'Total events read'],
-	['successfullyRestoredEvents', 'Total successfully restored events'],
-	['failedEvents', 'Total failed (and retried) SQS receives']
+	['successfullyProcessedEvents', 'Total successfully processed events (restored or forwarded to dlq)'],
+	['failedEvents', 'Total failed SQS receives']
 ];
 
 class Master {
@@ -46,10 +46,10 @@ class Master {
 		}
 
 		for (const [entry, ] of sumEntries) {
-			this._sums.set(entry, this._sums.get(entry) + payload[entry]);
+			this._sums.set(entry, this._sums.get(entry) + payload.body[entry]);
 		}
-		log(`invocation #${invocationNum} returned - processed events: ${payload.processedEvents}, restored events: ${payload.successfullyRestoredEvents}, SQS failures: ${payload.failedEvents}, time: ${executionTime.toFixed(2)} s, max memory: ${maxMemory} MB`);
-		return payload.continuationToken;
+		log(`invocation #${invocationNum} returned - processed events: ${payload.body.processedEvents}, restored events: ${payload.body.successfullyProcessedEvents}, SQS failures: ${payload.body.failedEvents}, time: ${executionTime.toFixed(2)} s, max memory: ${maxMemory} MB`);
+		return payload.body.continuationToken;
 	}
 
 	_processEvent() {
@@ -92,7 +92,7 @@ class Master {
 				log(`done processing worker (${workers.length - counter} left)`, counter);
 			});
 		}, {concurrency: this._concurrency})
-			.then(() => log('Refire master completed'));
+			.then(() => log('Restore master completed'));
 	}
 
 	getStats() {

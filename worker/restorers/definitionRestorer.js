@@ -37,7 +37,11 @@ function restoreCreatedEvent(context, definitionModel, eventDefinition, eventCre
                 eventDefinition,
                 updates
             );
-        });
+        }).then(() => {
+			return {
+				success: true
+			};
+		});
 }
 
 function restoreUpdatedEvent(context, definitionModel, eventDefinition, eventUpdatedAt, eventCreatedAt) {
@@ -69,7 +73,11 @@ function restoreUpdatedEvent(context, definitionModel, eventDefinition, eventUpd
                 eventDefinition,
                 updates
             );
-        });
+        }).then(() => {
+			return {
+				success: true
+			};
+		});
 }
 
 function restoreDeletedEvent(context, definitionModel, eventDefinition, eventUpdatedAt, eventCreatedAt) {
@@ -102,7 +110,11 @@ function restoreDeletedEvent(context, definitionModel, eventDefinition, eventUpd
                 eventDefinition,
                 updates
             );
-        });
+        }).then(() => {
+			return {
+				success: true
+			};
+		});
 }
 
 function restoreEvent(context, event) {
