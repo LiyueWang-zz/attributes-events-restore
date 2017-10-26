@@ -10,9 +10,10 @@ const messageHandler = require('./messageHandler');
 module.exports.handler = lambdaHandler((event, context) => {
 	assert(event.region, 'missing event.region');
 	assert(event.sqsUrl, 'missing event.sqsUrl');
+	assert(event.dlqUrl, 'missing event.dlqUrl');
 	assert(event.attributeTable, 'missing event.attributeTable');
 	assert(event.definitionTable, 'missing event.definitionTable');
-	assert(event.ratePerSecond, 'missing event.ratePerSecond');
+	assert(event.messagesPerSecond, 'missing event.messagesPerSecond');
 	assert(event.terminationTimeInSec, 'missing event.terminationTimeInSec');
 
 	context.log.info({ queue: event.sqsUrl, attributeTable: event.attributeTable, definitionTable: event.definitionTable }, 'starting restore message from queue to dynamodb tables.');
@@ -23,6 +24,13 @@ module.exports.handler = lambdaHandler((event, context) => {
 	let totalMessagesFailed = 0;
 	let processor;
 	const terminationTime = event.terminationTimeInSec * 1000;
+
+	const messageOptions = {
+		context: context,
+		attributeTable: event.attributeTable,
+		definitionTable: event.definitionTable,
+		dlqUrl: event.dlqUrl
+	}
 
 	const cleanup = function() {
 		context.log.debug('waiting for all the tasks to be finished');
@@ -35,7 +43,7 @@ module.exports.handler = lambdaHandler((event, context) => {
 		processor = new SQSProcessor({
 			queueUrl: event.sqsUrl,
 			region: event.region,
-			messagesPerSecond: event.ratePerSecond
+			messagesPerSecond: event.messagesPerSecond
 		}).on('error', err => {
 			// TODO: Right now that's the only way to identify this error
 			if (err.message === 'Failed to receive messages') {
@@ -53,7 +61,8 @@ module.exports.handler = lambdaHandler((event, context) => {
 		}).on('empty', () => {
 			context.log.info({ url: event.sqsUrl }, 'Queue is empty');
 		}).on('data', message => {
-			const workerTaskP = messageHandler(context, message)
+			messageOptions.message = message;
+			const workerTaskP = messageHandler(messageOptions)
 				.then(result => {
 					if (result) {
 						message.delete();
@@ -82,10 +91,10 @@ module.exports.handler = lambdaHandler((event, context) => {
 				totalMessagesFailed
 			}, 'Succesfully processed messages on the queue');
 		return {
-			processedMessages: totalMessagesProcessed,
-			successfullyRestoredMessages: totalMessagesSucceeded,
-			failedMessages: totalMessagesFailed,
-			continuationToken: nextContinuationToken
+			processedEvents: totalMessagesProcessed,
+			successfullyRestoredEvents: totalMessagesSucceeded,
+			failedEvents: totalMessagesFailed,
+			continuationToken: null
 		};
 	});
 

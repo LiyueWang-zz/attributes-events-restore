@@ -13,37 +13,14 @@ function exitError(errorMessage) {
 }
 
 /*
- * Returns all S3 key prefixes in a reasonably alphabetically spread way
- * @param prefixSize - size of the hex prefix
- * @param concurrency - number of readers
- */
-function getPrefixes(prefixSize, concurrency) {
-	const numPrefixes = 1 << (prefixSize * 4);  // we assume hex prefixes
-	const prefixes = _.map(_.range(numPrefixes), (x) => ('0'.repeat(prefixSize - 1) + x.toString(16)).substr(-prefixSize));
-
-	const reorderedPrefixes = [];
-	const chunkSize = Math.ceil(numPrefixes / concurrency);
-	let start = 0;
-	let i = start;
-	while (reorderedPrefixes.length < numPrefixes) {
-		reorderedPrefixes.push(prefixes[i]);
-		i += chunkSize;
-		if (i >= numPrefixes) {
-			i = ++start;
-		}
-	}
-	return reorderedPrefixes;
-}
-
-/*
  * Prints a nicely formatted log line
  * @param line - The log string to be printed
- * @param prefix - Prefix name or undefined if it's a general operation
+ * @param worker - worker number or undefined if it's a general operation
  */
-function log(line, prefix) {
+function log(line, worker) {
 	if (process.env.DISABLE_MASTER_LOG !== 'true') {
-		const prefixLog = prefix ? ('[prefix ' + prefix + ']') : '';
-		console.log(`[${new Date().toISOString()}]${prefixLog} ${line}`);
+		const workerLog = worker ? ('[worker ' + worker + ']') : '';
+		console.log(`[${new Date().toISOString()}]${workerLog} ${line}`);
 	}
 }
 
@@ -88,5 +65,5 @@ function confirmStdin() {
 }
 
 module.exports = {
-	getPrefixes, log, getDeploymentInfo, confirmStdin, exitError
+	log, getDeploymentInfo, confirmStdin, exitError
 };

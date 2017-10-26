@@ -24,7 +24,7 @@ provider:
       - "dynamodb:Query"
       - "dynamodb:Scan"
       - "dynamodb:UpdateItem"
-    Resource: "arn:aws:dynamodb:*"
+      Resource: "arn:aws:dynamodb:*"
     - Effect: "Allow"
       Action:
         - "sqs:SendMessage"
@@ -55,13 +55,13 @@ resources:
       Type: AWS::SQS::Queue
       Properties:
         QueueName: ${self:service}-${self:provider.stage}-EventsRestoreQueue
-        VisibilityTimeout: 60  #TODO
+        VisibilityTimeout: 60
         RedrivePolicy: 
           deadLetterTargetArn: 
             Fn::GetAtt: 
               - "EventsRestoreDLQ"
               - "Arn"
-          maxReceiveCount: 10
+          maxReceiveCount: 5
 
     EventsRestoreDLQPolicy:
       Type: AWS::SQS::QueuePolicy
@@ -71,29 +71,13 @@ resources:
           Statement:
             - Effect: Allow
               Principal: "*"
-              Action: sqs:SendMessage
+              Action: sqs:*
               Resource:
                 Fn::GetAtt: 
                   - "EventsRestoreDLQ"
                   - "Arn"
         Queues:
           - {Ref: EventsRestoreQueue}
-
-    EventsRestoreQueuePolicy:
-      Type: AWS::SQS::QueuePolicy
-      Properties:
-        PolicyDocument:
-          Version: "2012-10-17"
-          Statement:
-            - Effect: Allow
-              Principal: "*"
-              Action: sqs:SendMessage
-              Resource:
-                Fn::GetAtt: 
-                  - "EventsRestoreQueue"
-                  - "Arn"
-        Queues:
-          - {Ref: EventsRestoreQueue} #TODO
 
   Outputs:
     AccountId:
@@ -104,8 +88,7 @@ resources:
           - "EventsRestoreQueue"
           - "QueueName"
     EventsRestoreQueueUrl:
-      Value:
-        - {Ref: EventsRestoreQueue}
+      Value: {Ref: EventsRestoreQueue}
     EventsRestoreQueueArn:
       Value:
         Fn::GetAtt: 
@@ -117,8 +100,7 @@ resources:
           - "EventsRestoreDLQ"
           - "QueueName"
     EventsRestoreDLQUrl:
-      Value:
-        - {Ref: EventsRestoreDLQ}
+      Value: {Ref: EventsRestoreDLQ}
     EventsRestoreDLQArn:
       Value:
         Fn::GetAtt: 

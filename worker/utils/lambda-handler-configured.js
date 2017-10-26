@@ -42,8 +42,8 @@ module.exports = function(handler) {
 			throw new Response({
 				statusCode: err.statusCode,
 				body: errio.toObject(err, {
-					stack: includeErrorInfo,
-					exclude: includeErrorInfo ? ['_logged'] : ['jse_cause', '_logged']
+					stack: true,
+					exclude: true ? ['_logged'] : ['jse_cause', '_logged']
 				})
 			});
 		},

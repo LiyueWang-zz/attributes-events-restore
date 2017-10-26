@@ -3,19 +3,23 @@
 const Promise = require('bluebird');
 const AWS = require('aws-sdk'); // load SDK here so the profile gets set
 
+const {log} = require('./helpers');
+
 const lambda = new AWS.Lambda();
 const sumEntries = [
-	['processedBatches', 'Total S3 objects read'],
 	['processedEvents', 'Total events read'],
-	['successfullySentEvents', 'Total successfully re-played events'],
-	['failedEvents', 'Total failed (and retried) SQS sends']
+	['successfullyRestoredEvents', 'Total successfully restored events'],
+	['failedEvents', 'Total failed (and retried) SQS receives']
 ];
 
 class Master {
-	constructor({functionName, region, sqsUrl, attributeTable, definitionTable, concurrency}) {
+	constructor({functionName, region, sqsUrl, messagesPerSecond, terminationTimeInSec, dlqUrl, attributeTable, definitionTable, concurrency}) {
 		this._functionName = functionName;
 		this._region = region;
 		this._sqsUrl = sqsUrl;
+		this._messagesPerSecond = messagesPerSecond;
+		this._terminationTimeInSec = terminationTimeInSec;
+		this._dlqUrl = dlqUrl;
 		this._attributeTable = attributeTable;
 		this._definitionTable = definitionTable;
 		this._concurrency = concurrency;
@@ -25,6 +29,8 @@ class Master {
 	}
 
 	_processLambdaResult(data, invocationNum, requestId) {
+		console.log("_processLambdaResult data: "+JSON.stringify(data,null,4));
+		console.log("_processLambdaResult invocationNum: "+JSON.stringify(invocationNum,null,4));
 		const logTail = Buffer.from(data.LogResult, 'base64').toString();
 		const reportRegex = /REPORT RequestId: ([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\s+Duration: ([0-9.]+) ms\s+Billed Duration: ([0-9]+) ms\s+Memory Size: (\d+) MB\s+Max Memory Used: (\d+) MB\s+$/;
 		const parsedLog = reportRegex.exec(logTail);
@@ -36,25 +42,32 @@ class Master {
 
 		if (data.FunctionError) {
 			log(`invocation #${invocationNum} returned with error - request ID: ${requestId}, time: ${executionTime.toFixed(2)} s, max memory: ${maxMemory} MB`);
-			// print the error and data for more context:
 			console.log(JSON.stringify(payload, null, 4));
 			console.log(JSON.stringify(data));
 			throw new Error('Aborting due to Lambda error');
 		}
 
-		log(`invocation #${invocationNum} returned - S3 objects: ${payload.processedBatches}, processed events: ${payload.processedEvents}, sent events: ${payload.successfullySentEvents}, SQS failures: ${payload.failedEvents}, time: ${executionTime.toFixed(2)} s, max memory: ${maxMemory} MB`);
+		for (const [entry, ] of sumEntries) {
+			this._sums.set(entry, this._sums.get(entry) + payload[entry]);
+		}
+		log(`invocation #${invocationNum} returned - processed events: ${payload.processedEvents}, restored events: ${payload.successfullyRestoredEvents}, SQS failures: ${payload.failedEvents}, time: ${executionTime.toFixed(2)} s, max memory: ${maxMemory} MB`);
 		return payload.continuationToken;
 	}
 
-	_processPrefix(prefix) {
+	_processEvent() {
+		console.log("this._sqsUrl: "+this._sqsUrl);
+		console.log("this._dlqUrl: "+this._dlqUrl);
 		const recursePages = (continuationToken, invocationNum) => {
 			log('starting invocation #' + invocationNum);
 			const invokeRequest = lambda.invoke({
 				FunctionName: this._functionName,
 				Payload: JSON.stringify({
-					continuationToken,
+					// continuationToken,
 					region: this._region,
 					sqsUrl: this._sqsUrl,
+					messagesPerSecond: this._messagesPerSecond,
+					terminationTimeInSec: this._terminationTimeInSec,
+					dlqUrl: this._dlqUrl,
 					attributeTable: this._attributeTable,
 					definitionTable: this._definitionTable
 				}),
@@ -75,11 +88,12 @@ class Master {
 		log('Restore master started');
 		this._executionStartTime = new Date();
 
+		const workers = new Array(this._concurrency).fill('worker');
 		let counter = 0;
-		return Promise.map(prefixes, (prefix) => {
-			return this._processMessage(prefix).then(() => {
+		return Promise.map(workers, (worker) => {
+			return this._processEvent(worker).then(() => {
 				counter++;
-				log(`done processing prefix (${prefixes.length - counter} left)`, prefix);
+				log(`done processing worker (${workers.length - counter} left)`, counter);
 			});
 		}, {concurrency: this._concurrency})
 			.then(() => log('Refire master completed'));

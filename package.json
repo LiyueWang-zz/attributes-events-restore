@@ -1,0 +1,47 @@
+{
+  "name": "attributes-events-restore",
+  "version": "0.1.0",
+  "description": "\"Restore events from sqs to dynamodb tables.\"",
+  "main": "cli/index.js",
+  "scripts": {
+    "restore": "node cli/index.js",
+    "test": "cross-env DISABLE_MASTER_LOG=true LOG_LEVEL=warn mocha test/unit",
+    "integration-test": "cross-env DISABLE_MASTER_LOG=true mocha test/post-deployment",
+    "lint": "eslint cli worker/*.js test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LiyueWang/attributes-events-restore.git"
+  },
+  "author": "",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/LiyueWang/attributes-events-restore/issues"
+  },
+  "homepage": "https://github.com/LiyueWang/attributes-events-restore#readme",
+  "pre-commit": [
+    "lint"
+  ],
+  "dependencies": {
+    "aws-sdk": "2.82.0",
+    "bluebird": "3.5.0",
+    "lodash": "4.17.4",
+    "serverless": "1.17.0",
+    "serverless-plugin-info-json": "1.0.1",
+    "yargs": "8.0.2"
+  },
+  "devDependencies": {
+    "@d2l/eslint-config-aurora": "0.1.1",
+    "@d2l/node-testing-helpers": "1.0.20",
+    "bunyan": "1.8.10",
+    "chai": "4.1.0",
+    "cross-env": "5.0.1",
+    "eslint": "3.19.0",
+    "mocha": "3.4.2",
+    "pre-commit": "1.2.2",
+    "proxyquire": "1.8.0",
+    "seedrandom": "2.4.3",
+    "shelljs": "0.7.8",
+    "uuid": "3.1.0"
+  }
+}

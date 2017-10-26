@@ -1,12 +1,12 @@
 const BPromise = require('bluebird');
 
-const ValueModel = require('./models/valueModel');
+const ValueModel = require('../models/valueModel');
 
 // compare the _v instead of time?
-function restoreCreatedEvent(context, eventValue, eventCreatedAt) {
+function restoreCreatedEvent(context, valueModel, eventValue, eventCreatedAt) {
     BPromise.resolve()
         .then(() => {
-            return ValueModel.readOne(
+            return valueModel.readOne(
                 context,
                 eventValue.valueKey
             );
@@ -32,7 +32,7 @@ function restoreCreatedEvent(context, eventValue, eventCreatedAt) {
                  updates.UpdateExpression = updates.UpdateExpression + ` DELETE #updatedAt :updatedAt`;
             }
 
-            return ValueModel.update(
+            return valueModel.update(
                 context,
                 eventValue,
                 updates
@@ -40,10 +40,10 @@ function restoreCreatedEvent(context, eventValue, eventCreatedAt) {
         });
 }
 
-function restoreUpdatedEvent(context, eventValue, eventUpdatedAt, eventCreatedAt) {
+function restoreUpdatedEvent(context, valueModel, eventValue, eventUpdatedAt, eventCreatedAt) {
     BPromise.resolve()
         .then(() => {
-            return ValueModel.readOne(
+            return valueModel.readOne(
                 context,
                 eventValue.valueKey
             );
@@ -64,7 +64,7 @@ function restoreUpdatedEvent(context, eventValue, eventUpdatedAt, eventCreatedAt
                 ':createdAt': eventCreatedAt
             };
 
-            return ValueModel.update(
+            return valueModel.update(
                 context,
                 eventValue,
                 updates
@@ -72,10 +72,10 @@ function restoreUpdatedEvent(context, eventValue, eventUpdatedAt, eventCreatedAt
         });
 }
 
-function restoreDeletedEvent(context, eventValue, eventUpdatedAt, eventCreatedAt) {
+function restoreDeletedEvent(context, valueModel, eventValue, eventUpdatedAt, eventCreatedAt) {
     BPromise.resolve()
         .then(() => {
-            return ValueModel.readOne(
+            return valueModel.readOne(
                 context,
                 eventValue.valueKey
             );
@@ -97,7 +97,7 @@ function restoreDeletedEvent(context, eventValue, eventUpdatedAt, eventCreatedAt
             };
 
             eventValue.dateDeleted = eventUpdatedAt;
-            return ValueModel.delete(
+            return valueModel.delete(
                 context,
                 eventValue,
                 updates
@@ -105,7 +105,9 @@ function restoreDeletedEvent(context, eventValue, eventUpdatedAt, eventCreatedAt
         });
 }
 
-function restoreEvent(context, event) {
+function restoreEvent(context, event, valueTableName) {
+    const valueModel = new ValueModel(valueTableName);
+
     //skip schema validation, assume all sent events in BEF validated
     const eventValue = {
         valueKey: event.EventBody.object.Id,
@@ -117,13 +119,18 @@ function restoreEvent(context, event) {
         _v: event.EventBody.object.RevisionNumber,
     };
 
+    context.log.info({ eventValue }, 'starting restoreEvent...');
+
     switch (event.EventBody.Action) {
         case 'Created':
-                return restoreCreatedEvent(context, eventValue, event.EventBody.object.createdAt);
+                return true;
+                // return restoreCreatedEvent(context, valueModel, eventValue, event.EventBody.object.createdAt);
         case 'Updated':
-                return restoreUpdatedEvent(context, eventValue, event.EventBody.object.updatedAt, event.EventBody.object.createdAt);
+                return true;
+                // return restoreUpdatedEvent(context, valueModel, eventValue, event.EventBody.object.updatedAt, event.EventBody.object.createdAt);
         case 'Deleted':
-                return restoreDeletedEvent(context, eventValue, event.EventBody.object.updatedAt, event.EventBody.object.createdAt);
+                return true;
+                // return restoreDeletedEvent(context, valueModel, eventValue, event.EventBody.object.updatedAt, event.EventBody.object.createdAt);
         default:
             throw new Error('Unknown event action: ' + event.EventBody.Action);
     }

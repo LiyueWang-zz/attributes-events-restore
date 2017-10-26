@@ -1,8 +1,14 @@
 {
   "dependencies": {
+    "assert": "1.4.1",
     "bluebird": "3.5.0",
-    "bunyan": "1.8.10",
-    "seedrandom": "2.4.3",
-    "uuid": "3.1.0"
+    "errio": "1.2.2",
+    "joi": "13.0.1",
+    "lambda-handler-as-promised": "1.2.2",
+    "lambda-envelope": "1.0.3",
+    "vogels-promisified": "2.2.4",
+    "@d2l/node-lambda-errors": "^1.0.9",
+    "@d2l/attributes-schemas": "3.3.0",
+    "@d2l/node-sqs-processor": "^2.3.0"
   }
 }

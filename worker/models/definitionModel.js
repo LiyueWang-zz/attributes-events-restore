@@ -1,40 +1,39 @@
 'use strict';
 
 const joi = require('joi');
-const vogels = require('../vogels-configured');
-
+const vogels = require('vogels-promisified');
 const SCHEMA = require('@d2l/attributes-schemas').schemas.definitionModel;
+
 SCHEMA.dateDeleted = joi.date().allow(null);
 
-const definitionTableName = "";
-const Definition = vogels.define('Definition', {
-	hashKey: 'tenantId',
-	rangeKey: 'id',
-	timestamps: true,
-	schema: SCHEMA,
-	tableName: definitionTableName,
-	indexes: [
-		{
+module.exports = class DefinitionModel {
+	constructor(tableName, region = 'us-east-1') {
+		vogels.AWS.config.update({ region: region });
+
+		this.definition = vogels.define('Definition', {
 			hashKey: 'tenantId',
-			rangeKey: 'name',
-			name: 'LocalNameIndex',
-			type: 'local'
-		}
-	]
-});
+			rangeKey: 'id',
+			timestamps: true,
+			schema: SCHEMA,
+			tableName: tableName,
+			indexes: [
+				{
+					hashKey: 'tenantId',
+					rangeKey: 'name',
+					name: 'LocalNameIndex',
+					type: 'local'
+				}
+			]
+		});
+	}
 
-module.exports = {
-	SCHEMA,
-
-	MODEL: Definition,
-
-	readOne: function(context, tenantId, defId) {
+	readOne(context, tenantId, defId) {
 		context.log.info({ tenantId, defId }, 'getting definition');
 
-		return Definition.getAsync(tenantId, defId);
-	},
+		return this.definition.getAsync(tenantId, defId);
+	}
 
-	update: function(context, definitionData, expectation = {}) {
+	update(context, definitionData, expectation = {}) {
 		const data = Object.assign(
 			{},
 			definitionData,
@@ -42,13 +41,12 @@ module.exports = {
 		});
 
 		context.log.info({ data, expectation }, 'updating definition optimistically');
-		return Definition.updateAsync(data, expectation);
-	},
+		return this.definition.updateAsync(data, expectation);
+	}
 
-
-	delete: function(context, definitionData, expectation = {}) {
+	delete(context, definitionData, expectation = {}) {
 		context.log.info({ definitionData, expectation }, 'deleting definition');
-		return Definition.updateAsync(definitionData, expectation);
-	},
+		return this.definition.updateAsync(definitionData, expectation);
+	}
 
 };

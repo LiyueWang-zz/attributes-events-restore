@@ -8,15 +8,18 @@ const pkg = require('../package.json');
 
 let argv = yargs
 	.option('sqs', {alias: 's', describe: 'SQS queue URL'})
-	.option('dynamodb-attribute', {alias: 'a', describe: 'Destination dynamodb attribute value table'})
-	.option('dynamodb-definition', {alias: 'd', describe: 'Destination dynamodb attribute definition table'})
+	.option('messagesPerSecond', {alias: 'm', default: 100, describe: 'SQS queue messagesPerSecond'})
+	.option('terminationTimeInSec', {alias: 't', default: 240, describe: 'SQS queue terminationTimeInSec'})
+	.option('dlq', {alias: 'l', describe: 'SQS dead letter queue URL'})
+	.option('dynamodb-attribute', {alias: 'a', describe: 'Destination dynamodb attribute value table name'})
+	.option('dynamodb-definition', {alias: 'd', describe: 'Destination dynamodb attribute definition table name'})
 	.option('concurrency', {alias: 'c', default: 1, describe: 'Number of parallel Lambda invocations'})
 	.option('plan', {alias: 'p', describe: 'Collect and print a summary and then exit', type: 'boolean'})
 	.option('yes', {alias: 'y', describe: 'Ignore confirmation prompt', type: 'boolean'})
 	.help().alias('h', 'help')
 	.version().alias('v', 'version')
-	.usage('Usage:\n  $0 --s https://sqs... --a arn:aws:dynamodb:... --d arn:aws:dynamodb:...')
-	.demandOption(['sqs'])
+	.usage('Usage:\n  $0 -s https://sqs... -l https://sqs... -a Values -d Definitions')
+	.demandOption(['sqs', 'dlq', 'dynamodb-attribute', 'dynamodb-definition'])
 	.argv;
 
 console.log(`Attriutes Events Restore tool v${pkg.version}`);
@@ -50,6 +53,11 @@ function summary() {
 	console.log('\nPlan summary');
 	console.log('------------');
 	console.log(`Sqs:                            ${argv.sqs}`);
+	console.log(`messagesPerSecond:              ${argv.messagesPerSecond}`);
+	console.log(`terminationTimeInSec:           ${argv.terminationTimeInSec}`);
+	console.log(`dlq:                            ${argv.dlq}`);
+	console.log(`dynamodb-attribute:             ${argv['dynamodb-attribute']}`);
+	console.log(`dynamodb-definition:            ${argv['dynamodb-definition']}`);
 	console.log(`Concurrent Lambda invocations:  ${argv.concurrency}`);
 	console.log(`AWS profile:                    ${profile}`);
 	console.log(`Region:                         ${region}`);
@@ -69,9 +77,12 @@ function summary() {
 const master = new Master({
 	functionName,
 	region: region,
-	sqs: argv.sqs,
-	attribute: argv['dynamodb-attribute'],
-	definition: argv['dynamodb-definition'],
+	sqsUrl: argv.sqs,
+	messagesPerSecond: argv.messagesPerSecond,
+	terminationTimeInSec: argv.terminationTimeInSec,
+	dlqUrl: argv.dlq,
+	attributeTable: argv['dynamodb-attribute'],
+	definitionTable: argv['dynamodb-definition'],
 	concurrency: argv.concurrency,
 });
 

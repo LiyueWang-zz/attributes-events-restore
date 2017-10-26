@@ -62,9 +62,9 @@ module.exports = function handleMessage(options = {}) {
 
         context.log.debug({ event }, 'processing event');
         if (event.EventType === 'AttributeEvent') {
-            return valueRestorer(context, event);
+            return valueRestorer(context, event, options.attributeTable);
         } else if (event.EventType === 'AttributeDefinitionEvent') {
-            return definitionRestorer(context, event);
+            return definitionRestorer(context, event, options.definitionTable);
         } else {
             const err = new Error('unkown event type');
             err._logged = true;

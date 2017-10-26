@@ -1,12 +1,12 @@
 const BPromise = require('bluebird');
 
-const DefinitionModel = require('./models/definitionModel');
+const DefinitionModel = require('../models/definitionModel');
 
 // compare the _v instead of time?
-function restoreCreatedEvent(context, eventDefinition, eventCreatedAt) {
+function restoreCreatedEvent(context, definitionModel, eventDefinition, eventCreatedAt) {
     BPromise.resolve()
         .then(() => {
-            return DefinitionModel.readOne(
+            return definitionModel.readOne(
                 context,
                 eventDefinition.id
             );
@@ -32,7 +32,7 @@ function restoreCreatedEvent(context, eventDefinition, eventCreatedAt) {
                  updates.UpdateExpression = updates.UpdateExpression + ` DELETE #updatedAt :updatedAt`;
             }
 
-            return DefinitionModel.update(
+            return definitionModel.update(
                 context,
                 eventDefinition,
                 updates
@@ -40,10 +40,10 @@ function restoreCreatedEvent(context, eventDefinition, eventCreatedAt) {
         });
 }
 
-function restoreUpdatedEvent(context, eventDefinition, eventUpdatedAt, eventCreatedAt) {
+function restoreUpdatedEvent(context, definitionModel, eventDefinition, eventUpdatedAt, eventCreatedAt) {
     BPromise.resolve()
         .then(() => {
-            return DefinitionModel.readOne(
+            return definitionModel.readOne(
                 context,
                 eventDefinition.id
             );
@@ -64,7 +64,7 @@ function restoreUpdatedEvent(context, eventDefinition, eventUpdatedAt, eventCrea
                 ':createdAt': eventCreatedAt
             };
 
-            return DefinitionModel.update(
+            return definitionModel.update(
                 context,
                 eventDefinition,
                 updates
@@ -72,10 +72,10 @@ function restoreUpdatedEvent(context, eventDefinition, eventUpdatedAt, eventCrea
         });
 }
 
-function restoreDeletedEvent(context, eventDefinition, eventUpdatedAt, eventCreatedAt) {
+function restoreDeletedEvent(context, definitionModel, eventDefinition, eventUpdatedAt, eventCreatedAt) {
     BPromise.resolve()
         .then(() => {
-            return DefinitionModel.readOne(
+            return definitionModel.readOne(
                 context,
                 eventDefinition.id
             );
@@ -97,7 +97,7 @@ function restoreDeletedEvent(context, eventDefinition, eventUpdatedAt, eventCrea
             };
 
             eventDefinition.dateDeleted = eventUpdatedAt;
-            return ValueModel.delete(
+            return definitionModel.delete(
                 context,
                 eventDefinition,
                 updates
@@ -106,6 +106,8 @@ function restoreDeletedEvent(context, eventDefinition, eventUpdatedAt, eventCrea
 }
 
 function restoreEvent(context, event) {
+    const definitionModel = new DefinitionModel(definitionTableName);
+
     const eventDefinition = {
         id: event.EventBody.object.Id,
         tenantId: event.TenantId,
@@ -118,11 +120,11 @@ function restoreEvent(context, event) {
 
     switch (event.EventBody.Action) {
         case 'Created':
-                return restoreCreatedEvent(context, eventDefinition, event.EventBody.object.createdAt);
+                return restoreCreatedEvent(context, definitionModel, eventDefinition, event.EventBody.object.createdAt);
         case 'Updated':
-                return restoreUpdatedEvent(context, eventDefinition, event.EventBody.object.updatedAt, event.EventBody.object.createdAt);
+                return restoreUpdatedEvent(context, definitionModel, eventDefinition, event.EventBody.object.updatedAt, event.EventBody.object.createdAt);
         case 'Deleted':
-                return restoreDeletedEvent(context, eventDefinition, event.EventBody.object.updatedAt, event.EventBody.object.createdAt);
+                return restoreDeletedEvent(context, definitionModel, eventDefinition, event.EventBody.object.updatedAt, event.EventBody.object.createdAt);
         default:
             throw new Error('Unknown event action: ' + event.EventBody.Action);
     }
