@@ -8,7 +8,6 @@
     "lambda-envelope": "1.0.3",
     "vogels-promisified": "2.2.4",
     "@d2l/node-lambda-errors": "^1.0.9",
-    "@d2l/attributes-schemas": "3.3.0",
     "@d2l/node-sqs-processor": "^2.3.0"
   }
 }

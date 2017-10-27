@@ -2,9 +2,6 @@
 
 const joi = require('joi');
 const vogels = require('vogels-promisified');
-const SCHEMA = require('@d2l/attributes-schemas').schemas.definitionModel;
-
-SCHEMA.dateDeleted = joi.date().allow(null);
 
 module.exports = class DefinitionModel {
 	constructor(tableName, region = 'us-east-1') {
@@ -13,8 +10,7 @@ module.exports = class DefinitionModel {
 		this.definition = vogels.define('Definition', {
 			hashKey: 'tenantId',
 			rangeKey: 'id',
-			timestamps: true,
-			schema: SCHEMA,
+			timestamps: false,
 			tableName: tableName,
 			indexes: [
 				{

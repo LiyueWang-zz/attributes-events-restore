@@ -32,16 +32,16 @@ function restoreCreatedEvent(context, valueModel, eventValue, eventCreatedAt) {
                  updates.UpdateExpression = updates.UpdateExpression + ` DELETE #updatedAt :updatedAt`;
             }
 
+			context.log.info({ eventValue }, 'restore Created Event');
             return valueModel.update(
                 context,
                 eventValue,
                 updates
             );
         })
-		.then(() => {
-			return {
-				success: true
-			};
+		.catch(err => {
+			context.log.error({ err, eventValue }, 'failed to restore Created Event');
+			throw err;
 		});
 }
 
@@ -65,20 +65,20 @@ function restoreUpdatedEvent(context, valueModel, eventValue, eventUpdatedAt, ev
                 '#createdAt': 'createdAt'
             };
             updates.ExpressionAttributeValues = {
-                ':updatedAt': eventUpdatedAt,
-                ':createdAt': eventCreatedAt
+                ':createdAt': eventCreatedAt,
+				':updatedAt': eventUpdatedAt
             };
 
+			context.log.info({ eventValue }, 'restore Updated Event');
             return valueModel.update(
                 context,
                 eventValue,
                 updates
             );
         })
-		.then(() => {
-			return {
-				success: true
-			};
+		.catch(err => {
+			context.log.error({ err, eventValue }, 'failed to restore Updated Event');
+			throw err;
 		});
 }
 
@@ -107,16 +107,16 @@ function restoreDeletedEvent(context, valueModel, eventValue, eventUpdatedAt, ev
             };
 
             eventValue.dateDeleted = eventUpdatedAt;
+			context.log.info({ eventValue }, 'restore Deleted Event');
             return valueModel.delete(
                 context,
                 eventValue,
                 updates
             );
         })
-		.then(() => {
-			return {
-				success: true
-			};
+		.catch(err => {
+			context.log.error({ err, eventValue }, 'failed to restore Deleted Event');
+			throw err;
 		});
 }
 
@@ -124,28 +124,25 @@ function restoreEvent(context, event, valueTableName) {
     const valueModel = new ValueModel(valueTableName);
 
     //skip schema validation, assume all sent events in BEF validated
-    // const eventValue = {
-    //     valueKey: event.EventBody.object.Id,
-    //     tenantId: event.TenantId,
-    //     objectId: event.EventBody.object.objectId,
-    //     objectType: event.EventBody.object.objectType,
-    //     values: event.EventBody.object.values,
-    //     lastUpdatedBy: event.EventBody.object.lastUpdatedBy,
-    //     _v: event.EventBody.object.RevisionNumber,
-    // };
+    const eventValue = {
+        valueKey: event.EventBody.Object.Id,
+        tenantId: event.TenantId,
+        objectId: event.EventBody.Object.objectId,
+        objectType: event.EventBody.Object.objectType,
+        values: event.EventBody.Object.values,
+        lastUpdatedBy: event.EventBody.Object.lastUpdatedBy,
+        _v: event.EventBody.Object.RevisionNumber,
+    };
 
-    // context.log.info({ eventValue }, 'starting restoreEvent...');
+    context.log.info({ eventValue }, 'starting restoreEvent...');
 
     switch (event.EventBody.Action) {
         case 'Created':
-                return {success:true};
-                // return restoreCreatedEvent(context, valueModel, eventValue, event.EventBody.object.createdAt);
+                return restoreCreatedEvent(context, valueModel, eventValue, event.EventBody.Object.createdAt);
         case 'Updated':
-                return {success:true};
-                // return restoreUpdatedEvent(context, valueModel, eventValue, event.EventBody.object.updatedAt, event.EventBody.object.createdAt);
+                return restoreUpdatedEvent(context, valueModel, eventValue, event.EventBody.Object.updatedAt, event.EventBody.Object.createdAt);
         case 'Deleted':
-                return {success:true};
-                // return restoreDeletedEvent(context, valueModel, eventValue, event.EventBody.object.updatedAt, event.EventBody.object.createdAt);
+                return restoreDeletedEvent(context, valueModel, eventValue, event.EventBody.Object.updatedAt, event.EventBody.Object.createdAt);
         default:
             throw new Error('Unknown event action: ' + event.EventBody.Action);
     }

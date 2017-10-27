@@ -2,6 +2,7 @@ service: attributes-events-restore
 
 custom:
   defaults:
+    test: false  # whether to deploy the integration test dynamodb tables or not
     region: us-east-1
     profile: default
     logLevel: info
@@ -45,6 +46,11 @@ functions:
     memory: 1536
 
 resources:
+  Conditions:
+    CreateTestInfrastructure:
+      Fn::Equals:
+        - "true"
+        - ${opt:test, self:custom.defaults.test}
   Resources:
     EventsRestoreDLQ:
       Type: "AWS::SQS::Queue"
@@ -79,6 +85,22 @@ resources:
         Queues:
           - {Ref: EventsRestoreQueue}
 
+    TestValuesTable:
+      Type: AWS::DynamoDB::Table
+      Condition: CreateTestInfrastructure
+      Properties:
+        TableName: ${self:service}-${self:provider.stage}-TestValuesTable
+        AttributeDefinitions:
+          - AttributeName: valueKey
+            AttributeType: S
+        KeySchema:
+          - AttributeName: valueKey
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+
   Outputs:
     AccountId:
       Value: {Ref: "AWS::AccountId"}
@@ -106,3 +128,9 @@ resources:
         Fn::GetAtt:
           - "EventsRestoreDLQ"
           - "Arn"
+    TestValuesTableName:
+      Value:
+        Fn::If:
+          - CreateTestInfrastructure
+          - ${self:service}-${self:provider.stage}-TestValuesTable
+          - ""

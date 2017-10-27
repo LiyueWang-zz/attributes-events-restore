@@ -13,7 +13,7 @@ let argv = yargs
 	.option('dlq', {alias: 'l', describe: 'SQS dead letter queue URL'})
 	.option('dynamodb-attribute', {alias: 'a', describe: 'Destination dynamodb attribute value table name'})
 	.option('dynamodb-definition', {alias: 'd', describe: 'Destination dynamodb attribute definition table name'})
-	.option('totalEventsToProcess', {alias: 'n', default: 1, describe: 'Total number of events to process'})
+	.option('totalEventsToProcess', {alias: 'n', default: 100, describe: 'Total number of events to process'})
 	.option('plan', {alias: 'p', describe: 'Collect and print a summary and then exit', type: 'boolean'})
 	.option('yes', {alias: 'y', describe: 'Ignore confirmation prompt', type: 'boolean'})
 	.help().alias('h', 'help')

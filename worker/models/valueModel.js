@@ -2,11 +2,6 @@
 
 const joi = require('joi');
 const vogels = require('vogels-promisified');
-const SCHEMA = require('@d2l/attributes-schemas').schemas.valueModel;
-
-SCHEMA.valueKey = joi.string().min(1).max(128).uri({ scheme: 'd2l' })
-	.regex( /^d2l:[\w-]+:(user|group)+:[\w-]+$/ ).required();
-SCHEMA.dateDeleted = joi.date().allow(null);
 
 module.exports = class ValueModel {
 	constructor(tableName, region = 'us-east-1') {
@@ -14,8 +9,7 @@ module.exports = class ValueModel {
 
 		this.value = vogels.define('Value', {
 			hashKey: 'valueKey',
-			timestamps: true,
-			schema: SCHEMA,
+			timestamps: false,
 			tableName: tableName
 		});
 	}

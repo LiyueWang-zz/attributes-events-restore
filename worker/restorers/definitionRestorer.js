@@ -37,10 +37,10 @@ function restoreCreatedEvent(context, definitionModel, eventDefinition, eventCre
                 eventDefinition,
                 updates
             );
-        }).then(() => {
-			return {
-				success: true
-			};
+        })
+		.catch(err => {
+			context.log.error({ err, eventDefinition }, 'failed to restore Created Event');
+			throw err;
 		});
 }
 
@@ -73,10 +73,10 @@ function restoreUpdatedEvent(context, definitionModel, eventDefinition, eventUpd
                 eventDefinition,
                 updates
             );
-        }).then(() => {
-			return {
-				success: true
-			};
+        })
+		.catch(err => {
+			context.log.error({ err, eventDefinition }, 'failed to restore Updated Event');
+			throw err;
 		});
 }
 
@@ -110,10 +110,10 @@ function restoreDeletedEvent(context, definitionModel, eventDefinition, eventUpd
                 eventDefinition,
                 updates
             );
-        }).then(() => {
-			return {
-				success: true
-			};
+        })
+		.catch(err => {
+			context.log.error({ err, eventDefinition }, 'failed to restore Deleted Event');
+			throw err;
 		});
 }
 
@@ -121,22 +121,22 @@ function restoreEvent(context, event) {
     const definitionModel = new DefinitionModel(definitionTableName);
 
     const eventDefinition = {
-        id: event.EventBody.object.Id,
+        id: event.EventBody.Object.Id,
         tenantId: event.TenantId,
-        name: event.EventBody.object.name,
-        value: event.EventBody.object.value,
-        applyTo: event.EventBody.object.applyTo,
-        required: event.EventBody.object.required,
-        _v: event.EventBody.object.RevisionNumber,
+        name: event.EventBody.Object.name,
+        value: event.EventBody.Object.value,
+        applyTo: event.EventBody.Object.applyTo,
+        required: event.EventBody.Object.required,
+        _v: event.EventBody.Object.RevisionNumber,
     };
 
     switch (event.EventBody.Action) {
         case 'Created':
-                return restoreCreatedEvent(context, definitionModel, eventDefinition, event.EventBody.object.createdAt);
+                return restoreCreatedEvent(context, definitionModel, eventDefinition, event.EventBody.Object.createdAt);
         case 'Updated':
-                return restoreUpdatedEvent(context, definitionModel, eventDefinition, event.EventBody.object.updatedAt, event.EventBody.object.createdAt);
+                return restoreUpdatedEvent(context, definitionModel, eventDefinition, event.EventBody.Object.updatedAt, event.EventBody.Object.createdAt);
         case 'Deleted':
-                return restoreDeletedEvent(context, definitionModel, eventDefinition, event.EventBody.object.updatedAt, event.EventBody.object.createdAt);
+                return restoreDeletedEvent(context, definitionModel, eventDefinition, event.EventBody.Object.updatedAt, event.EventBody.Object.createdAt);
         default:
             throw new Error('Unknown event action: ' + event.EventBody.Action);
     }

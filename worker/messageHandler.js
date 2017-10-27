@@ -74,7 +74,7 @@ module.exports = function handleMessage(options = {}) {
 			throw err;
 		}
 	})
-		.then(result => result.success)
+		.then(() => true)
 		.catch(err => {
 			if (!err._logged) {
 				context.log.error({ err, message }, 'failed to process message');
